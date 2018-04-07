@@ -8,7 +8,7 @@ namespace ModLoaderLibrary
     {
         public static readonly string verMajor = "0";
         public static readonly string verMinor = "0";
-        public static readonly string verRevision = "1";
+        public static readonly string verRevision = "2";
 
         public static int numMods = 0;
 

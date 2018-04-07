@@ -19,15 +19,23 @@ please submit an issue to this repository at the top of the page.
 ##### How to Install ModLoader:
 1. Download the latest release package for your platform in the "Releases" tab
 2. Unzip the release package and place all files in your Airport CEO game directory
-3. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
+3. Find your Airport CEO Path - Locate your Steam installation, then navigate to `steamapps/common/
+Airport CEO`. Copy this path.
+4. Set ModLoader to launch instead of the game in Steam. Right click on Airport CEO in your library and
+click "Properties". Then click on "Set launch options...". Now, paste in your path to Airport CEO inside
+quotes and add "ModLoader.exe" on the end. Your final path should look something like:
+```C:/Steam_Installation/steamapps/common/Airport CEO/ModLoader.exe```
+Click OK.
+5. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
 window with some logging information, then the game will start. Do **NOT** close the command prompt
 window, just leave it alone.
-5. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
+6. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
 in the top-right corner once in-game.
 
 ##### How to Uninstall ModLoader:
 1. Delete the "ModLoader" and "mods" folders. Then delete "ModLoader.exe" and all the files that sound similar to
 "Mono.Cecil"
+2. Remove everything from the Launch Options dialog for Airport CEO in Steam
 2. You're done. Your game should be back to vanilla.
 
 ##### How to Install Mods:
@@ -74,7 +82,7 @@ If you need help or inspiration, I've bundled a couple of sample mods with the p
 ##### Folder Structure and Distribution
 Distributing a mod for ACEO ModLoader is actually pretty easy. ModLoader creates a "mods" folder inside the ACEO root
 directory. This folder contains one subfolder for each mod. Inside the subfolder is (at minimum) one library/dll file with the
-same name as the mod. This library gets loaded first at startup.
+same name as the mod. This library gets loaded first at startup. **Note:** The folder and library name _must_ match!
 
 ###### Structure Diagram:
 ```
@@ -114,8 +122,9 @@ writing to disk (Harmony is distributed with this project, as there is no NuGet 
 2. Open the solution in Visual Studio
 3. *Ensure* all project references are accounted for, otherwise the build will fail.
    1. Make sure to `Restore NuGet Packages` before building
-   2. Point the Unity and Assembly-CSharp references at the `Managed` folder in the Airport CEO directory, or
-   optionally copy the required References into the project's root - this is their default path hint.
+   2. Copy over all required references into the `ACEOLibs` folder inside the project root.
+   At this time, this includes `UnityEngine.dll`, `UnityEngine.UI.dll`, `Assembly-CSharp.dll`, and
+   `UnityEngine.CoreModule.dll`. You can find these libraries in the "Airport CEO_Data/Managed" folder.
 4. Build the solution (Build => Build Solution or `Ctrl+Shift+B`)
 
 ##### FAQ:
