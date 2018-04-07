@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Win32;
 using Mono.Cecil;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using Mono.Cecil.Cil;
 
@@ -14,9 +11,11 @@ namespace ModLoader
 {
     public class Patcher
     {
-        //public OSPlatform CurrentPlatform { get; }
+        public enum Platforms { OSX, Windows };
+        public Platforms CurrentPlatform { get; }
         public string PlatformExecExtension { get; }
         public string PlatformLibExtension { get; }
+        public string SteamPath { get; }
         public string ACEOPath { get; }
         public string ACEOExec { get; }
         private readonly string AssemblyPath;
@@ -25,77 +24,81 @@ namespace ModLoader
         public Patcher()
         {
             // Get Operating System
-            /*
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // Code from http://mono.wikia.com/wiki/Detecting_the_execution_platform
+            int platformID = (int)Environment.OSVersion.Platform;
+            if (platformID == 4 || platformID == 6 || platformID == 128)
             {
-                CurrentPlatform = OSPlatform.Windows;
+                CurrentPlatform = Platforms.OSX;
+                PlatformExecExtension = ".app";
+                PlatformLibExtension = ".dylib";
+                
+            }
+            else
+            {
+                CurrentPlatform = Platforms.Windows;
                 PlatformExecExtension = ".exe";
                 PlatformLibExtension = ".dll";
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                CurrentPlatform = OSPlatform.OSX;
-                PlatformExecExtension = ".app";
-                PlatformLibExtension = ".dylib";
-            }
-            else
-                throw new Exception("Platform not implemented");
-            */
-            PlatformExecExtension = ".exe";
-            PlatformLibExtension = ".dll";
 
-            // Get Path to Airport CEO based on Operating System
-            ACEOPath = FindACEOPath();
-            Logger.Log("Found Steam Installation: " + ACEOPath);
+            // Get Path to Airport CEO and Steam based on Operating System
+            this.SteamPath = FindPaths().Item1;
+            this.ACEOPath = FindPaths().Item2;
+            Logger.Log("Found Steam Installation: " + this.ACEOPath);
 
-            ACEOExec = ACEOPath + "/Airport CEO" + PlatformExecExtension;
-            if (!File.Exists(ACEOExec))
+            this.ACEOExec = this.ACEOPath + "/Airport CEO" + this.PlatformExecExtension;
+            if (!File.Exists(this.ACEOExec))
                 throw new Exception("Could not find Airport CEO executable");
-            Logger.Log("Found Airport CEO Executable: " + ACEOExec);
-            AssemblyPath = ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharp" + PlatformLibExtension;
-            ModLoaderLibPath = ACEOPath + "/ModLoader/MLL" + PlatformLibExtension;
-            if (!File.Exists(ModLoaderLibPath))
-                throw new Exception("Missing ModLoaderLibrary" + PlatformLibExtension +
+            Logger.Log("Found Airport CEO Executable: " + this.ACEOExec);
+            this.AssemblyPath = this.ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharp" + this.PlatformLibExtension;
+            this.ModLoaderLibPath = this.ACEOPath + "/ModLoader/MLL" + this.PlatformLibExtension;
+            if (!File.Exists(this.ModLoaderLibPath))
+                throw new Exception("Missing ModLoaderLibrary" + this.PlatformLibExtension +
                                     ", ModLoader not installed correctly.");
         }
 
-        private string FindACEOPath()
+        private Tuple<string, string> FindPaths()
         {
             // WINDOWS LOCATION
-            //if (CurrentPlatform == OSPlatform.Windows)
+            if (CurrentPlatform == Platforms.Windows)
             {
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam"))
                 {
                     if (key.GetValue("SteamPath") == null)
                         throw new Exception("Steam installation not found in registry.");
                     else
-                        return key.GetValue("SteamPath") + @"/steamapps/common/Airport CEO";
+                    {
+                        return new Tuple<string, string>(
+                            key.GetValue("SteamPath").ToString(), 
+                            key.GetValue("SteamPath").ToString() + "/steamapps/common/Airport CEO"
+                        );
+                    }
                 }
             }
             // MAC OSX LOCATION
-            /*
-            else if (CurrentPlatform == OSPlatform.OSX)
+            else if (CurrentPlatform == Platforms.OSX)
             {
                 // I'm just gonna assume it's the default location, I don't know much about OSX
-                return "~/Library/Application Support/Steam/SteamApps/common/Airport CEO";
+                return new Tuple<string, string>(
+                    "/Applications",
+                    "~/Library/Application Support/Steam/SteamApps/common/Airport CEO"
+                );
             }
             else
                 throw new Exception("Platform not supported.");
-            */
         }
 
         public void BackupAssembly()
         {
             Logger.Log("Backing up files...");            
-            // Missing Assembly-CSharp.dll, that's bad yo
+            // Missing Assembly-CSharp, that's bad yo
             if (!File.Exists(AssemblyPath))
                 throw new Exception("Airport CEO Installation Missing Critical File.");
 
             // If the backup already exists, delete it
-            if (File.Exists(ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + PlatformLibExtension))
-                File.Delete(ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + PlatformLibExtension);
+            if (File.Exists(ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + this.PlatformLibExtension))
+                File.Delete(ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + this.PlatformLibExtension);
 
-            File.Copy(AssemblyPath, ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + PlatformLibExtension);
+            File.Copy(AssemblyPath, ACEOPath + "/Airport CEO_Data/Managed/Assembly-CSharpBACKUP" + this.PlatformLibExtension);
         }
 
         public void PatchAssembly()
@@ -174,6 +177,24 @@ namespace ModLoader
             File.Delete(AssemblyPath);
             File.Move(AssemblyPath + "PATCHED", AssemblyPath);
             Logger.Log("File replaced.");
+        }
+
+        public void RunMonoCerts()
+        {
+            Logger.Log("Copying Mono Certificate Import Dependencies...");
+            File.Copy(this.ACEOPath + "/Airport CEO_Data/Managed/Mono.Security" + this.PlatformLibExtension, 
+                this.ACEOPath + "/ModLoader/Mono.Security" + this.PlatformLibExtension, true);
+            try
+            {
+                Logger.Log("Running Mozroots...");
+                var proc = System.Diagnostics.Process.Start(this.ACEOPath + "/ModLoader/mozroots.exe", "--import --sync");
+                proc.WaitForExit();
+                Logger.Log("Finished.");
+            }
+            catch (Exception e)
+            {
+                Logger.Log("Failed to run mozroots, " + e.Message, Logger.LogType.WARNING);
+            }
         }
 
         public void RevertState()

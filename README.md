@@ -7,8 +7,8 @@ modders much greater freedom to modify the game.
 Modders can create a mod in C#, compile their mod into a library then
 have it loaded into the game during startup with this loader.
 
-**Note for Mac Users**: This project currently only works on Windows, but a Mac version may
-be coming soon. Read below for more information.
+**Note for Mac Users**: This project will (supposedly) run on Mac, but you will need
+the Mono runtime library. See the installation instructions for more information.
 
 ### For Players
 
@@ -19,24 +19,31 @@ please submit an issue to this repository at the top of the page.
 ##### How to Install ModLoader:
 1. Download the latest release package for your platform in the "Releases" tab
 2. Unzip the release package and place all files in your Airport CEO game directory
-3. Find your Airport CEO Path - Locate your Steam installation, then navigate to `steamapps/common/
-Airport CEO`. Copy this path.
-4. Set ModLoader to launch instead of the game in Steam. Right click on Airport CEO in your library and
-click "Properties". Then click on "Set launch options...". Now, paste in your path to Airport CEO inside
-quotes and add "ModLoader.exe" on the end. Your final path should look something like:
-```C:/Steam_Installation/steamapps/common/Airport CEO/ModLoader.exe```
-Click OK.
-5. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
-window with some logging information, then the game will start. Do **NOT** close the command prompt
-window, just leave it alone.
-6. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
+
+###### Windows specific installation
+3. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
+window with some logging information, then the game will start through Steam. Do **NOT** close 
+the command prompt window, just leave it alone.
+4. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
 in the top-right corner once in-game.
 
+###### Mac-specific installation
+3. Make sure you have the Mono runtime. You can get the latest version from the 
+[Mono website](http://www.mono-project.com/download/stable/#download-mac). 
+4. Launching Airport CEO will be just a little more difficult than just double-clicking "ModLoader.exe".
+   Until I can devise a better way for you to launch the game, you will need to open a Terminal window,
+   navigate to your Airport CEO directory (I believe it's 
+   `~/Library/Application Support/Steam/SteamApps/common/Airport CEO`) then call the application
+   from mono by running the command `mono ModLoader.exe`. I don't have a Mac, so this remains completely
+   untested.
+5. You're done (hopefully). You will know ModLoader is working when you see a ModLoader message underneath
+   the game version number in the top-right corner once in-game.
+
 ##### How to Uninstall ModLoader:
-1. Delete the "ModLoader" and "mods" folders. Then delete "ModLoader.exe" and all the files that sound similar to
+1. Delete the "ModLoader" folder. Then delete "ModLoader.exe" and all the files that sound similar to
 "Mono.Cecil"
-2. Remove everything from the Launch Options dialog for Airport CEO in Steam
-2. You're done. Your game should be back to vanilla.
+2. Optionally delete your "mods" folder.
+3. You're done. Your game should be back to vanilla.
 
 ##### How to Install Mods:
 Mods go inside the `mods` folder in the root of your Airport CEO game directory. Mod developers should
@@ -64,11 +71,6 @@ day speed.
 It depends if Apoapsis Studios decides to create a C# modding API for their game. If they do, this loader
 will become redundant and I will start to decomission it. If not, I believe this project will still have
 a reason to exist.
-
-`Where's the Mac Version?`
-I built this project on Windows with Windows in mind using a framework that's not available (in its current form)
-on Mac or Linux. However, work is underway to port the patcher to the same library that Unity uses to run C# code
-on your Mac.
 
 ### For Modders
 
@@ -123,8 +125,9 @@ writing to disk (Harmony is distributed with this project, as there is no NuGet 
 3. *Ensure* all project references are accounted for, otherwise the build will fail.
    1. Make sure to `Restore NuGet Packages` before building
    2. Copy over all required references into the `ACEOLibs` folder inside the project root.
-   At this time, this includes `UnityEngine.dll`, `UnityEngine.UI.dll`, `Assembly-CSharp.dll`, and
-   `UnityEngine.CoreModule.dll`. You can find these libraries in the "Airport CEO_Data/Managed" folder.
+   At this time, this includes `UnityEngine.dll`, `UnityEngine.UI.dll`, `Assembly-CSharp.dll`,
+   `Mono.Security.dll` and `UnityEngine.CoreModule.dll`. You can find these libraries in the 
+   "Airport CEO_Data/Managed" folder. If you're on Mac, replace `.dll` with `.dylib`
 4. Build the solution (Build => Build Solution or `Ctrl+Shift+B`)
 
 ##### FAQ:

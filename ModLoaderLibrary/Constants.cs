@@ -6,9 +6,11 @@ namespace ModLoaderLibrary
 {
     class Constants
     {
-        public static readonly string verMajor = "0";
-        public static readonly string verMinor = "0";
-        public static readonly string verRevision = "2";
+        public static readonly int verMajor = 0;
+        public static readonly int verMinor = 0;
+        public static readonly int verRevision = 2;
+
+        public static readonly string githubReleaseURL = "https://api.github.com/repos/bdgmb2/aceo-modloader/releases";
 
         public static int numMods = 0;
 

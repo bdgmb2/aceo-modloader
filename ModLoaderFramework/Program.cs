@@ -1,6 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Diagnostics;
+using System.Threading;
 
 namespace ModLoader
 {
@@ -16,18 +16,34 @@ namespace ModLoader
 
                 patcher.BackupAssembly();
 
+                //patcher.RunMonoCerts();
+
                 patcher.PatchAssembly();
 
                 patcher.ReplaceAssembly();
 
                 Logger.Log("Starting Airport CEO");
-                var aceoProcess = new Process();
-                aceoProcess.StartInfo =
-                    new ProcessStartInfo(patcher.ACEOPath + "/Airport CEO.exe");
-                aceoProcess.StartInfo.WorkingDirectory = patcher.ACEOPath;
-                aceoProcess.Start();
+                var startGame = new Process();
+                // Airport CEO's AppID is 673610
+                startGame.StartInfo =
+                    new ProcessStartInfo(patcher.SteamPath + "/Steam" + patcher.PlatformExecExtension);
+                startGame.StartInfo.WorkingDirectory = patcher.ACEOPath;
+                startGame.StartInfo.Arguments = "-applaunch 673610";
+                startGame.Start();
 
-                aceoProcess.WaitForExit();
+                // Steam should be starting up the game now
+                startGame.WaitForExit();
+                // Wait a second and a half just to be safe
+                Thread.Sleep(1500);
+                var processes = Process.GetProcessesByName("Airport CEO");
+                if (processes.Length > 0)
+                {
+                    Logger.Log("Found Airport CEO process. Waiting until exit.");
+                    Logger.Log("DO NOT CLOSE THIS WINDOW!", Logger.LogType.WARNING);
+                    // We're gonna assume the first process that matches Airport CEO is, in fact, the game
+                    // Wait until the game exits
+                    SpinWait.SpinUntil(() => { return processes[0].HasExited; });
+                }
 
                 patcher.RevertState();
             }
