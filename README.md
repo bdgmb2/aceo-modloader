@@ -17,7 +17,7 @@ you may encounter bugs. If you encounter a bug or other undesirable behavior,
 please submit an issue to this repository at the top of the page.
 
 ##### How to Install ModLoader:
-1. Download the latest release package for your platform in the "Releases" tab
+1. Download the latest release package in the "Releases" tab
 2. Unzip the release package and place all files in your Airport CEO game directory
 
 ###### Windows specific installation
@@ -60,7 +60,8 @@ This means ModLoader should work when a game update comes out. Mods, however, ma
 
 `What does this allow modders to do?`
 Previously, modders could only modify the game through the official "MDK" packs Apoapsis Studios released
-on their [website](https://www.airportceo.com/modding/)
+on their [website](https://www.airportceo.com/modding/). This project allows modders to indirectly modify game
+scripts and other code, giving modders much more freedom to add features, change gameplay mechanics and more.
 
 `Are there any mods to try out yet?`
 In the "Releases" tab at the top of this repository, you can find 2 sample mods to install and play with - one
