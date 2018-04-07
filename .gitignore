@@ -1,6 +1,7 @@
 .vs/
 bin/
 obj/
-ACEOLibs/
+ACEOLibs/*
+!ACEOLibs/README.md
 packages/
 !packages/repositories.config

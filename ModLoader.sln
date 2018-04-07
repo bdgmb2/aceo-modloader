@@ -21,6 +21,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticVehicles", "Sample
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeedUpNighttime", "Samples\SpeedUpNighttime\SpeedUpNighttime.csproj", "{02D20BA8-8F27-46A1-8A70-4EAD32A3E768}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ACEOLibs", "ACEOLibs", "{03DA93AB-3351-4469-878D-B76E616D4D32}"
+	ProjectSection(SolutionItems) = preProject
+		ACEOLibs\README.md = ACEOLibs\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +55,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{03C451F0-F17A-43C1-8BF1-B5887EB99988} = {566F0945-8773-40F8-BC22-22C675C552EF}
 		{02D20BA8-8F27-46A1-8A70-4EAD32A3E768} = {566F0945-8773-40F8-BC22-22C675C552EF}
+		{03DA93AB-3351-4469-878D-B76E616D4D32} = {7BFC7D40-2794-4967-BE87-45CCB3AC4BF8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {732A37C5-8E35-46C3-A986-B508267BCD9C}
