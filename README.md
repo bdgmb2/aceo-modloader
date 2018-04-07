@@ -52,8 +52,9 @@ Previously, modders could only modify the game through the official "MDK" packs 
 on their [website](https://www.airportceo.com/modding/)
 
 `Are there any mods to try out yet?`
-In the "Releases" tab at the top of this repository, you can find a sample mod to install and play with - it
-changes the bus companies in the game to more realistic real-world ones.
+In the "Releases" tab at the top of this repository, you can find 2 sample mods to install and play with - one
+changes the bus companies in the game to more realistic real-world ones, the other doubles the fast-forward to next
+day speed.
 
 `What happens when Steam Workshop comes out?`
 It depends if Apoapsis Studios decides to create a C# modding API for their game. If they do, this loader
