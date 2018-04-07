@@ -19,20 +19,16 @@ please submit an issue to this repository at the top of the page.
 ##### How to Install ModLoader:
 1. Download the latest release package for your platform in the "Releases" tab
 2. Unzip the release package and place all files in your Airport CEO game directory
-3. Configure Steam to start ModLoader instead of the game
-     1. Right Click on "Airport CEO" in Steam and select "Properties"
-     2. Click on "Set launch options..."
-     3. Enter `ModLoader.exe` in the launch options.
-4. You're done. Start the game normally through Steam. You should get a command prompt
+3. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
 window with some logging information, then the game will start. Do **NOT** close the command prompt
 window, just leave it alone.
 5. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
 in the top-right corner once in-game.
 
 ##### How to Uninstall ModLoader:
-1. Delete the "ModLoader" and "mods" folders. Then delete "ModLoader.exe"
-2. Delete the ModLoader launch command in the Steam Launch Options (Check step 3 above)
-3. You're done. Your game should be back to vanilla.
+1. Delete the "ModLoader" and "mods" folders. Then delete "ModLoader.exe" and all the files that sound similar to
+"Mono.Cecil"
+2. You're done. Your game should be back to vanilla.
 
 ##### How to Install Mods:
 Mods go inside the `mods` folder in the root of your Airport CEO game directory. Mod developers should

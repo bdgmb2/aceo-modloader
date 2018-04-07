@@ -11,7 +11,8 @@ namespace ModLoader
 
         public static void SetupLogger(string fileName)
         {
-            fileHandle = File.CreateText(fileName);
+            // This thing didn't work anyway
+            //fileHandle = File.CreateText(fileName);
             setup = true;
         }
 
@@ -23,7 +24,7 @@ namespace ModLoader
             string fullMessage = "[" + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString() +
                                  "] [" + type + "] " + message;
 
-            fileHandle.WriteLine(fullMessage);
+            //fileHandle.WriteLine(fullMessage);
             Console.WriteLine(fullMessage);
         }
     }
