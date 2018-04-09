@@ -50,6 +50,8 @@ namespace ModLoader
             catch (Exception e)
             {
                 Logger.Log("Exception Occurred: " + e.Message, Logger.LogType.ERROR);
+                Logger.Log("ModLoader has stopped. Press any key to exit.", Logger.LogType.ERROR);
+                Console.ReadKey();
             }
         }
     }
