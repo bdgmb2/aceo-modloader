@@ -4,9 +4,9 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BBE9D6F2-1159-41CE-BD98-8B517301C4FF}</ProjectGuid>
+    <ProjectGuid>{5FB77D60-45F8-4E47-99FA-BF30E6E2632F}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ModLoaderFramework</RootNamespace>
+    <RootNamespace>ModLoader</RootNamespace>
     <AssemblyName>ModLoader</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -34,6 +34,9 @@
     <ApplicationIcon>ACEOML.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\ACEOLibs\Assembly-CSharp.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -53,9 +56,14 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\ACEOLibs\UnityEngine.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\ACEOLibs\UnityEngine.CoreModule.dll</HintPath>
-      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\ACEOLibs\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -65,10 +73,16 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\ModLoaderLibrary\ModLoaderLibrary.csproj">
+      <Project>{247affd3-6af2-4bf0-83c0-ced19b457803}</Project>
+      <Name>ModLoaderLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="ACEOML.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

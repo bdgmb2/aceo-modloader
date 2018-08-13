@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SpeedUpNighttime")]
+[assembly: AssemblyTitle("ModLoader")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SpeedUpNighttime")]
+[assembly: AssemblyProduct("ModLoader")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("02d20ba8-8f27-46a1-8a70-4ead32a3e768")]
+[assembly: Guid("5fb77d60-45f8-4e47-99fa-bf30e6e2632f")]
 
 // Version information for an assembly consists of the following four values:
 //

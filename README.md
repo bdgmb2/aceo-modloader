@@ -1,164 +1,31 @@
 # Airport CEO ModLoader
 
 ACEO Modloader is an open-source game patcher for Airport CEO that
-allows for the existence of mods that override game source code, giving
-modders much greater freedom to modify the game.
+allows for the C# UnityScript mods to override existing game code.
 
 Modders can create a mod in C#, compile their mod into a library then
 have it loaded into the game during startup with this loader.
 
+**ACEO ModLoader Mods are compatible with Steam Workshop** (as of ACEO Alpha 27.4)
+
 **Note for Mac Users**: This project will (supposedly) run on Mac, but you will need
 the Mono runtime library. See the installation instructions for more information.
 
-### For Players
+### I am a player who downloaded a mod that requires this, what do?
+You probably downloaded a mod on the Steam Workshop that requires you to have ModLoader
+installed for it to do anything. Follow these steps to get your mod working:
 
-Note: ACEO ModLoader is in an early state of development. While it should work,
-you may encounter bugs. If you encounter a bug or other undesirable behavior, 
-please submit an issue to this repository at the top of the page.
+1. Go to the "Releases" tab at the top and download the `.zip` file for your platform
+(Windows or Mac OSX)
+2. If on Windows, move _all_ files in the compressed folder to your Airport CEO installation.
+If on Mac OSX, drag the "ACEO ModLoader" app into your Applications folder
+3. To start the game with mods, you MUST run the ACEO ModLoader application, NOT the normal Airport CEO
+executable.
 
-##### How to Install ModLoader:
-1. Download the latest release package in the "Releases" tab
-2. Unzip the release package and place all files in your Airport CEO game directory
+##### To Uninstall:
+**Mac OSX**: Delete the "ACEO ModLoader" app from your Applications folder
 
-###### Windows specific installation
-3. You're done. Start the game by launching "ModLoader.exe". You should get a command prompt
-window with some logging information, then the game will start through Steam. Do **NOT** close 
-the command prompt window, just leave it alone.
-4. You will know ModLoader is working when you see a ModLoader message underneath the game version number 
-in the top-right corner once in-game.
+**Windows**: Delete the `ACEOML.exe` file and the `MLL` folder from your Airport CEO installation directory.
 
-###### Mac-specific installation
-3. Make sure you have the Mono runtime. You can get the latest version from the 
-[Mono website](http://www.mono-project.com/download/stable/#download-mac). 
-4. Launching Airport CEO will be just a little more difficult than just double-clicking "ModLoader.exe".
-   Until I can devise a better way for you to launch the game, you will need to open a Terminal window,
-   navigate to your Airport CEO directory (I believe it's 
-   `~/Library/Application Support/Steam/SteamApps/common/Airport CEO`) then call the application
-   from mono by running the command `mono ModLoader.exe`. I don't have a Mac, so this remains completely
-   untested.
-5. You're done (hopefully). You will know ModLoader is working when you see a ModLoader message underneath
-   the game version number in the top-right corner once in-game.
-
-##### How to Uninstall ModLoader:
-1. Delete the "ModLoader" folder. Then delete "ModLoader.exe" and all the files that sound similar to
-"Mono.Cecil"
-2. Optionally delete your "mods" folder.
-3. You're done. Your game should be back to vanilla.
-
-##### How to Install Mods:
-Mods go inside the `mods` folder in the root of your Airport CEO game directory. Mod developers should
-distribute their mod as a folder or zip file. Move this folder inside the `mods` folder, or optionally -
-if the developer distributed a zip file - unzip the file into the `mods` folder.
-
-##### How to Uninstall Mods:
-Delete the mod from the `mods` folder.
-
-##### FAQ:
-`Will this break the game if it updates?`
-No. Only in extreme circumstances will ModLoader not run (see developer FAQ for more info).
-This means ModLoader should work when a game update comes out. Mods, however, may not work properly.
-
-`What does this allow modders to do?`
-Previously, modders could only modify the game through the official "MDK" packs Apoapsis Studios released
-on their [website](https://www.airportceo.com/modding/). This project allows modders to indirectly modify game
-scripts and other code, giving modders much more freedom to add features, change gameplay mechanics and more.
-
-`Are there any mods to try out yet?`
-In the "Releases" tab at the top of this repository, you can find 2 sample mods to install and play with - one
-changes the bus companies in the game to more realistic real-world ones, the other doubles the fast-forward to next
-day speed.
-
-`What happens when Steam Workshop comes out?`
-It depends if Apoapsis Studios decides to create a C# modding API for their game. If they do, this loader
-will become redundant and I will start to decomission it. If not, I believe this project will still have
-a reason to exist.
-
-### For Modders
-
-Using this project, you can create a game-modifying library and load it into Airport CEO safely. Unlike more mature
-modding projects like [SMAPI](https://github.com/Pathoschild/SMAPI) for Stardew Valley and the Cities Skylines API, 
-ACEO ModLoader does *not* have it's own API (yet), so you must override game functions yourself using reflection. This is 
-quite tedious on it's own, so I highly recommend the use of [Harmony](https://github.com/pardeike/Harmony) or another 
-reflection library that can make development easier. Don't forget to keep [ILSpy](https://github.com/icsharpcode/ILSpy) handy!
-If you need help or inspiration, I've bundled a couple of sample mods with the project using Harmony.
-
-##### Folder Structure and Distribution
-Distributing a mod for ACEO ModLoader is actually pretty easy. ModLoader creates a "mods" folder inside the ACEO root
-directory. This folder contains one subfolder for each mod. Inside the subfolder is (at minimum) one library/dll file with the
-same name as the mod. This library gets loaded first at startup. **Note:** The folder and library name _must_ match!
-
-###### Structure Diagram:
-```
-|-- Airport CEO
-|-- mods
-|   +-- SampleMod
-    |   +-- SampleMod.dll
-    |   +-- Resources, etc.
-```
-
-###### Required Functions
-ModLoader only requires your mod to have 2 functions inside one class. There *must* be a class called "Main", and it
-*must* have 2 public static void functions called GameInitializing() and GameExiting()
-
-One gets called at the start of the game, one gets called when the game is exiting. If they are not present inside your
-mod, ModLoader will throw an error. More API style functions that you can use may follow as ACEO ModLoader grows. 
-For now, I recommend using Harmony (see above) to override game functions.
-
-###### Debugging Mods
-ModLoaderLibrary includes a class called LogOutput with a function called Log() that you can use to output messages
-to ModLoader's log file. Just make sure you reference ModLoaderLibrary when building your mod! You can view ModLoader
-log output inside the ModLoader folder in the "output.log" text file.
-
-### For ModLoader Developers
-
-##### Prerequisites:
-To build this project locally and contribute, you will need 
-- A legally obtained copy of Airport CEO
-- [Visual Studio 2017](https://visualstudio.com) (at least Community)
-- .NET Framework 4.0 (Unity - to my knowledge - uses the Mono equivalent of .Net 4)
-- [Harmony](https://github.com/pardeike/Harmony), another open-source library allowing function modification without
-writing to disk (Harmony is distributed with this project, as there is no NuGet package available for it)
-- [Mono.Cecil](http://www.mono-project.com/docs/tools+libraries/libraries/Mono.Cecil/) (Included as a NuGet package with this project)
-
-##### Compiling Locally:
-1. Clone this repo
-2. Open the solution in Visual Studio
-3. *Ensure* all project references are accounted for, otherwise the build will fail.
-   1. Make sure to `Restore NuGet Packages` before building
-   2. Copy over all required references into the `ACEOLibs` folder inside the project root.
-   At this time, this includes `UnityEngine.dll`, `UnityEngine.UI.dll`, `Assembly-CSharp.dll`,
-   `Mono.Security.dll` and `UnityEngine.CoreModule.dll`. You can find these libraries in the 
-   "Airport CEO_Data/Managed" folder. If you're on Mac, replace `.dll` with `.dylib`
-4. Build the solution (Build => Build Solution or `Ctrl+Shift+B`)
-
-##### FAQ:
-`How does it work?`
-There are two projects inside the solution: ModLoaderNetFramework and ModLoaderLibrary.
-- **ModLoaderNetFramework** is an executable patcher that runs before Airport CEO starts. It makes a backup of the game's 
-UnityScript library (Assembly-CSharp.dll), then patches 2 functions in the library, serving as the "entry point" and "exit point"
-of the ModLoader. It then starts the game. When the game shuts down, the patcher then reverts the library back. The main() function
-should be pretty easy to follow.
-
-- **ModLoaderLibrary** is where the real magic happens. There are two primary functions, `Entry()` and `Exit()`, both of which
-are pretty self-explanatory. `Entry()` searches the mods folder for assemblies to load into the game. `Exit()` doesn't really do
-much right now, but can in the future.
-
-`Why write a patcher instead of just distributing the modified library?`
-- The patcher itself only modifies 2 functions in the early parts of game startup. If the game updates,
-the patcher will most likely still work, and there's no need to redistribute a modified library for a constantly changing
-early access title.
-- I can't think of a faster way to get a DMCA takedown than distributing modified official game code
-
-`Where's the Mac Version... Again?`
-I wrote the patcher in the .NET framework, which only runs on Windows. I tried writing it originally in .NET Core, but 
-complications arose in the patching methods because Unity does *NOT* use .NET Core and the patched symbols couldn't be 
-recognized. To get a Mac version, the ModLoaderNetFramework patcher will probably need to be rewritten in Mono so a Mac
-executable can be built. If you're interested in working on this, let me know.
-
-`Why even make this?`
-Good question.
-
-##### Contributing
-Wow thanks, I thought you'd never scroll all the way down to this part. First of all, God help you. Second, you probably
-will take one look at my code and devise a better or more elegant solution for what I'm doing. *PLEASE* send a pull request
-with your feature additions, bugfixes, etc. I have no ego.
+### I want to start modding with ACEO ML, what do?
+Check the [wiki](https://github.com/bdgmb2/aceo-modloader/wiki) for this project to learn how to get started.

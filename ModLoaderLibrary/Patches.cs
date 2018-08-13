@@ -1,95 +1,165 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Harmony;
-using UnityEngine.UI;
 using UnityEngine;
-using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
+using UnityEngine.UI;
 
 namespace ModLoaderLibrary
 {
-    /// <summary>
-    /// This harmony patch adds on to the end of the game version string that displays in the upper-right corner of the game.
-    /// This function only adds the ModLoader version as well as the number of mods currently loaded in the game.
-    /// </summary>
-    [HarmonyPatch(typeof(GameVersionLabelUI))]
-    [HarmonyPatch("Awake")]
-    class GameVersionLabelPatch
-    {
-        static void Postfix(GameVersionLabelUI __instance)
-        {
-            // GameVersionLabelUI.versionLabelText is a private method, so we have to do some fancy reflection to get to it.
-            var versionLabelTextField = typeof(GameVersionLabelUI).GetField("versionLabelText", BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
-            var versionLabelText = versionLabelTextField.GetValue(__instance) as Text;
-            // Add on to the text on the next line with our ModLoader information
-            versionLabelText.text += "\nModLoader " + Constants.verMajor + "." + Constants.verMinor + "." + Constants.verRevision + " with " + Constants.numMods + " mods loaded.";
-        }
-    }
 
-    /// <summary>
-    /// This harmony patch adds an update-checker to another early main menu function that gets called. If this function
-    /// detects a newer version of ModLoader, it will send the default Airport CEO MessageDialog to the user telling them
-    /// there is an update available.
-    /// 
-    /// NOTE: THIS CODE DOES NOT WORK! I'm doing something wrong!
-    /// </summary>
-    [HarmonyPatch(typeof(MainMenuUI))]
-    [HarmonyPatch("Start")]
-    class CheckforUpdatesPatch
+    [HarmonyPatch(typeof(GameController))]
+    [HarmonyPatch("Awake")]
+    class LoadGameSettingsPatch
     {
-        // If there is an update to ModLoader, trigger a message dialog to the player
-        static void Postfix()
+        /// <summary>
+        /// When a mod is activated in the Airport CEO window, the LoadMods() function is called. Since ACEO
+        /// only supports business and livery mods right now, we can extend this functionality by loading
+        /// OTHER files into the game state with the patch to this function. Here is where we will load
+        /// code-level mods.
+        ///
+        /// FOR MODDERS: This function calls your gameLoading() function.
+        ///
+        /// FOR DEVELOPERS: If you look at GameController.LaunchGame(), you'll notice that all the mod
+        /// initializations happen pretty late in the game init... this isn't good for any mods that
+        /// want to alter systems that "awake" before mod load, ex. procurement. While I'd LIKE 
+        /// </summary>
+        [HarmonyPostfix]
+        public static void Postfix()
         {
-            // Mono SSL validation always fails, this line does NOT solve the problem!
-            ServicePointManager.ServerCertificateValidationCallback += (object sender, X509Certificate cert,
-                X509Chain chain, SslPolicyErrors sslPolicyErrors) => true;
-            // Get the list of releases from GitHub
-            var req = WebRequest.Create(Constants.githubReleaseURL) as HttpWebRequest;
-            List<GitHubRelease> releases = new List<GitHubRelease>();
-            try
+            Logger.Log("Launching Game State...", Logger.LogType.Debug);
+
+            var method = typeof(ModManager).GetMethod("GetModPath", BindingFlags.NonPublic | BindingFlags.Static);
+            GlobalVars.modPath = method?.Invoke(null, null) as string;
+            Logger.Log($"modPath: {GlobalVars.modPath}", Logger.LogType.Debug);
+            string[] directories = Directory.GetDirectories(GlobalVars.modPath);
+            foreach (string dir in directories)
             {
-                releases = Newtonsoft.Json.JsonConvert.DeserializeObject<List<GitHubRelease>>(new Func<string>(() =>
+                if (!ModManager.GetModData(dir, out ModData data))
+                    Logger.Log($"Couldn't get modData for {dir}!", Logger.LogType.Warning);
+                if (ModManager.IsModActivated(data.id))
                 {
-                    using (StreamReader r = new StreamReader(req.GetResponse().GetResponseStream()))
+                    // We're going to load all ".dll" and ".dylib" mods in the folder
+                    string lib = UnityEngine.SystemInfo.operatingSystem.Contains("Windows") ? ".dll" : ".dylib";
+                    string modName = new DirectoryInfo(dir).Name;
+                    if (File.Exists(Path.Combine(dir, modName + lib)))
                     {
-                        string output = r.ReadToEnd();
-                        LogOutput.Log("Received response from GitHub: " + output);
-                        return output;
+                        Logger.Log(
+                            $"Attempting to load code-level mod {modName}, file: {Path.Combine(dir, modName + lib)}");
+                        try
+                        {
+                            var assm = Assembly.LoadFile(Path.Combine(dir, modName + lib));
+                            var mainClass = assm.GetType($"{modName}.Main");
+                            if (mainClass == null)
+                                throw new Exception(
+                                    $"Main class not found inside mod namespace. Ensure the \"Main\" class exists and is in the same namespace as {modName}");
+                            mainClass.GetMethod("GameLoading")?.Invoke(null, null);
+
+                            //var overridingEnums = assm.GetType("EnumAdditions");
+                            //if (overridingEnums != null)
+                            //DialogPanel.Instance.ShowMessagePanel($"Note: You must restart Airport CEO to enable {modName}!");
+                            GlobalVars.numMods++;
+                            GlobalVars.modAssemblies.Add(new Tuple<string, Assembly>(modName, assm));
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Log($"Failed to load mod {modName}: {e.Message}", Logger.LogType.Error);
+                        }
                     }
-                })());
-            }
-            catch (Exception e)
-            {
-                LogOutput.Log("Something went wrong when connecting to the internet to find ModLoader releases: " + e.Message, LogOutput.LogType.WARNING);
-                while (e.InnerException != null)
-                {
-                    LogOutput.Log("Inner Exception: " + e.Message, LogOutput.LogType.WARNING);
-                    e = e.InnerException;
+                    else
+                        Logger.Log($"Mod {dir} not activated, skipping...", Logger.LogType.Debug);
                 }
             }
-            foreach (GitHubRelease rel in releases)
+        }
+
+        [HarmonyPatch(typeof(GameController))]
+        [HarmonyPatch("Start")]
+        class OnGameLoadedPatch
+        {
+            /// <summary>
+            /// After the game has fully loaded, we call each mod's GameLoaded() function, if it has one.
+            /// At this time, all the UI and frameworks have loaded, so mods can begin to interact with
+            /// systems and the player if they wish.
+            /// 
+            /// FOR MODDERS: This function calls your GameLoaded() function.
+            /// </summary>
+            [HarmonyPostfix]
+            public static void Postfix(GameController __instance)
             {
-                try
+                __instance.StartCoroutine(GameLoaded());
+            }
+
+            private static IEnumerator GameLoaded()
+            {
+                // Wait until the game is fully loaded
+                yield return SaveLoadGameDataController.loadComplete;
+                foreach (var mod in GlobalVars.modAssemblies)
                 {
-                    string version = rel.tag_name;
-                    var verValues = version.Split('.');
-                    LogOutput.Log("Checking ver " + verValues[0] + "." + verValues[1] + "." + verValues[2]);
-                    if (Convert.ToInt32(verValues[0]) > Constants.verMajor ||  //Major Version
-                        Convert.ToInt32(verValues[1]) > Constants.verMinor ||  // Minor Version
-                        Convert.ToInt32(verValues[2]) > Constants.verRevision) // Revision
+                    Logger.Log($"Attempting to call GameLoaded() for mod {mod.Item1}", Logger.LogType.Debug);
+                    // Get GameLoaded() function in mod, if it exists and run it
+                    try
                     {
-                        // If any of the above is true, there is a release with a higher version number than what the player is running!
-                        DialogPanel.Instance.ShowMessagePanel("There is an update for ModLoader: " + verValues[0] + "." + verValues[1] + "." + verValues[2]);
-                        LogOutput.Log("Newer version of ModLoader on the web: " + verValues[0] + "." + verValues[1] + "." + verValues[2]);
+                        mod.Item2.GetType($"{mod.Item1}.Main")?.GetMethod("GameLoaded")?.Invoke(null, null);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Log($"Code-level mod {mod.Item1} failed to run gameLoaded(): {e.Message}",
+                            Logger.LogType.Warning);
                     }
                 }
-                catch (Exception e)
+            }
+        }
+
+        [HarmonyPatch(typeof(ModManager))]
+        [HarmonyPatch("ActivateMod")]
+        [HarmonyPatch(new Type[] {typeof(string)})]
+        class ActivateModPatch
+        {
+            [HarmonyPostfix]
+            static void Postfix(string modID)
+            {
+                Logger.Log($"Checking mod {modID} for enums...", Logger.LogType.Debug);
+                // First, match the mod ID to a mod name. To do that, we have to parse the Mod ID's of all the mods manually.
+                var modData = ModManager.GetAllNativeMods();
+                foreach (ModData item in modData)
                 {
-                    LogOutput.Log("Something went wrong when getting latest ModLoader release: " + e.Message, LogOutput.LogType.WARNING);
+                    // found it
+                    if (item.id == modID)
+                    {
+                        Logger.Log($"Found mod {item.name} that matches mod ID", Logger.LogType.Debug);
+                        string modPath =
+                            typeof(ModManager).GetMethod("GetModPath", BindingFlags.Static | BindingFlags.NonPublic)
+                                ?.Invoke(null, null) as string;
+                        string modName = item.name.Replace(" ", "");
+                        // Load the mod in reflection only (we're only inspecting it for the Enums class, which requires a game restart)
+                        Logger.Log($"Attempting to load lib at {Path.Combine(modPath, modName, (modName + ".dll"))}",
+                            Logger.LogType.Debug);
+                        try
+                        {
+                            var asm = Assembly.ReflectionOnlyLoad(Path.Combine(modPath, modName, (modName + ".dll")));
+                            if (asm != null)
+                                Logger.Log("Success");
+                            if (asm?.GetType($"{item.name}.Main.EnumAdditions") != null)
+                            {
+                                Logger.Log($"Found enums class in {modName}", Logger.LogType.Debug);
+                                DialogPanel.Instance.ShowQuestionPanel((answer) =>
+                                {
+                                    if (answer)
+                                        MLUtils.RestartGameWithML();
+                                }, "This mod requires a restart. Would you like to restart now?", true);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Log($"Failed checking {modName} for enums: {e.Message}", Logger.LogType.Warning);
+                        }
+                        break;
+                    }
                 }
             }
         }

@@ -1,84 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Harmony;
 
 namespace ModLoaderLibrary
 {
     public class ModLoader
     { 
-        public static void Entry()
+        public static void Entry(bool verbosity)
         {
-            LogOutput.Initialize();
-            LogOutput.Log("Starting ModLoaderLibrary Version " + Constants.verMajor + "." + Constants.verMinor + "." + Constants.verRevision);
-            LogOutput.Log("Beginning Patches...");
+            Logger.Initialize(verbosity);
+            Logger.Log($"Starting ModLoaderLibrary Version {MLVersion.ToString()}");
+            Logger.Log("Beginning Patches...", Logger.LogType.Debug);
             try
             {
                 var harmony = HarmonyInstance.Create("com.catcherben.modloader");
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
+                Logger.Log("Finished MLL Patching.", Logger.LogType.Debug);
             }
             catch (Exception e)
             {
-                LogOutput.Log("Exception when patching: " + e.Message, LogOutput.LogType.ERROR);
+                Logger.Log($"Exception when patching: {e.Message}", Logger.LogType.Error);
                 while (e.InnerException != null)
                 {
-                    LogOutput.Log("Internal Exception Message: " + e.InnerException.Message, LogOutput.LogType.ERROR);
+                    Logger.Log($"Internal Exception Message: {e.InnerException.Message}", Logger.LogType.Error);
                     e = e.InnerException;
                 }
             }
-            LogOutput.Log("Finished Patching.");
-            LogOutput.Log("Searching for mods...");
-            if (!Directory.Exists("mods"))
-                Directory.CreateDirectory("mods");
-            // For every folder in the mods folder, search for a mod library with the same name
-            foreach (string modPath in Directory.GetDirectories("mods"))
-            {
-                string modName = Path.GetFileName(modPath);
-                // Since ModLoader does not support any platforms other than Windows at the moment, we're going to assume the
-                // library is a .dll file
-                string fullPathToLib = Path.Combine(modPath + "\\" + modName + ".dll");
-                if (File.Exists(fullPathToLib))
-                {
-                    LogOutput.Log("Loading mod " + modName);
-                    try
-                    {
-                        var asm = Assembly.LoadFile(fullPathToLib);
-                        // Ensure there is a GameInitializing() function in class Main
-                        var init = asm.GetType(modName + ".Main", true).GetMethod("GameInitializing");
-                        if (init == null)
-                            throw new Exception("Could not find mod initialization function!");
 
-                        // Ensure there is a GameExiting() function in class Main
-                        var exit = asm.GetType(modName + ".Main", true).GetMethod("GameExiting");
-                        if (exit == null)
-                            throw new Exception("Could not find mod exit function!");
-
-                        // Everything's good, add the mod assembly to the list and call the initialize function
-                        Constants.modAssemblies.Add(new Tuple<string, Assembly>(modName, asm));
-                        init.Invoke(new object(), null);
-
-                        // Increment the mod count number
-                        Constants.numMods++;
-                    }
-                    catch (Exception e)
-                    {
-                        LogOutput.Log("Mod" + modName + " Failed to Load: " + e.Message, LogOutput.LogType.ERROR);
-                    }
-                }
-            }
+            // All mod-loading code now occurs in a harmony patch, now that ACEO supports modding files, etc. 
+            Logger.Log("ModLoaderLibrary initialization finished.");
         }
 
         public static void Exit()
         {
-            foreach (Tuple<string, Assembly> mod in Constants.modAssemblies)
+            foreach (var mod in GlobalVars.modAssemblies)
             {
                 // Call each mod's GameExiting() function
                 var exit = mod.Item2.GetType(mod.Item1 + ".Main", true).GetMethod("GameExiting");
-                exit.Invoke(new object(), null);
+                if (exit != null)
+                    exit.Invoke(new object(), null);
+                else Logger.Log($"Mod {mod.Item1} does not have exit function. Skipping.", Logger.LogType.Debug);
             }
-            LogOutput.Log("Exiting Airport CEO...");
-            LogOutput.DisposeFirst();
+            Logger.Log("Exiting Airport CEO...");
+            Logger.DisposeFirst();
         }
     }
 }

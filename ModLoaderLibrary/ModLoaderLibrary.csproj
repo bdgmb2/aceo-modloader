@@ -32,23 +32,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
-    <Compile Include="GitHubRelease.cs" />
     <Compile Include="Main.cs" />
-    <Compile Include="LogOutput.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\0Harmony.dll</HintPath>
+      <HintPath>..\ACEOLibs\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\ACEOLibs\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Net" />
@@ -60,6 +55,9 @@
       <HintPath>..\ACEOLibs\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\ACEOLibs\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\ACEOLibs\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
@@ -70,7 +68,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy "MLL.dll" "../../../ACEOLibs/MLL.dll"</PostBuildEvent>
   </PropertyGroup>
 </Project>
