@@ -28,7 +28,6 @@ steps:
     sed -i 's:net35;net45;net472;net48;netcoreapp3.0:net45:' Harmony/HarmonyTests/HarmonyTests.csproj
   displayName: 'Remove unnecessary Harmony targets'
 - task: DownloadSecureFile@1
-  displayName: Pull in Airport CEO Code
   inputs:
     secureFile: 'ACEOLibs.zip'
 - bash: 'unzip -q ACEOLibs.zip -d ModLoader/ACEOLibs'
