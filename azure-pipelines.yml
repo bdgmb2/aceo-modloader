@@ -24,12 +24,8 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 - bash: |
-    pwd
-    ls
     sed -i 's:net35;net45;net472;net48;netstandard2.1;netcoreapp3.0:net45:' Harmony/Harmony/Harmony.csproj
-    sed -i 's:net35;net45;net472;net48;netstandard2.1;netcoreapp3.0:net45:' Harmony/HarmonyTests/HarmonyTests.csproj
-    cat Harmony/Harmony/Harmony.csproj
-    cat Harmony/HarmonyTests/HarmonyTests.csproj
+    sed -i 's:net35;net45;net472;net48;netcoreapp3.0:net45:' Harmony/HarmonyTests/HarmonyTests.csproj
   displayName: 'Remove unnecessary Harmony targets'
 - task: VSBuild@1
   displayName: Build
