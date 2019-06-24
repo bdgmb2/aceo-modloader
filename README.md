@@ -1,5 +1,7 @@
 # Airport CEO ModLoader
 
+[![Build Status](https://dev.azure.com/bdgmb2/ACEO-Modloader/_apis/build/status/bdgmb2.aceo-modloader?branchName=master)](https://dev.azure.com/bdgmb2/ACEO-Modloader/_build/latest?definitionId=1&branchName=master)
+
 ACEO Modloader is an open-source game patcher for Airport CEO that
 allows for the C# UnityScript mods to override existing game code.
 
