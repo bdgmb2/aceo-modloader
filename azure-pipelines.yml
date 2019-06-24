@@ -16,9 +16,11 @@ variables:
   repositoryName: 'bdgmb2/aceo-modloader'
 
 steps:
+- powershell: 'git submodule init && git submodule update'
+  displayName: 'Clone Submodules'
 - task: NuGetToolInstaller@0
 - task: NuGetCommand@2
-  displayName: Nuget-Restore
+  displayName: Nuget Restore
   inputs:
     restoreSolution: '$(solution)'
 - task: VSBuild@1
