@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Microsoft.Win32;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
@@ -14,101 +13,38 @@ namespace ModLoader
 {
     internal class Patcher
     {
-        // Accessed variables from Main()
-        public bool IsPatching { get; set; }
-        public bool IsLaunchingGame { get; set; }
-        public string SteamDirectory { get; set; }
-        public bool IsInjectingEnums { get; set; }
-        public string AssemblyName { get; set; }
-        public string BackupFilename { get; set; }
-
-        public string LibExtension { get; }
-        public string ExecExtenstion { get; }
-
         // Internal variables
-        private string _gameDirectory;
-        private string _assemblyDirectory;
-        private enum PlatformType { WIN, OSX };
-        private readonly PlatformType _platform;
+        private readonly string _gameDirectory;
+        private readonly string _assemblyDirectory;
+        private readonly string _execExtension;
+        private readonly string _libExtension;
         private ModuleDefinition module;
+
+        private readonly NLog.Logger _logger;
 
         public Patcher()
         {
-            int platform = (int) Environment.OSVersion.Platform;
-            if (platform == 4 || platform == 6 || platform == 128) // On OSX
-            {
-                LibExtension = ".dylib";
-                ExecExtenstion = ".app";
-                _platform = PlatformType.OSX;
-            }
-            else // On Windows
-            {
-                LibExtension = ".dll";
-                ExecExtenstion = ".exe";
-                _platform = PlatformType.WIN;
-            }
-
-            IsPatching = false;
-            IsInjectingEnums = false;
-            IsLaunchingGame = false;
-            BackupFilename = "Assembly-CSharpBackup" + LibExtension;
-            AssemblyName = "Assembly-CSharp" + LibExtension;
+            _logger = NLog.LogManager.GetCurrentClassLogger();
+            _execExtension = ConfigManager.CurrentPlatform == OSType.Windows ? ".exe" : ".app";
+            _libExtension = ConfigManager.CurrentPlatform == OSType.Windows ? ".dll" : ".dylib";
+            _gameDirectory = FindACEODirectory(ConfigManager.SteamDirectory);
+            _assemblyDirectory = Path.Combine(_gameDirectory, "Airport CEO_Data", "Managed");
         }
 
-        private string FindACEODirectory(string steamDirectory)
+        private static string FindACEODirectory(string steamDirectory)
         {
-            return _platform == PlatformType.WIN ? 
+            return ConfigManager.CurrentPlatform == OSType.Windows ? 
                 Path.Combine(steamDirectory, "steamapps", "common", "Airport CEO") :
                 "~/Library/Application Support/Steam/steamapps/common/Airport CEO";
         }
 
-        private string FindSteamDirectory()
-        {
-            if (_platform == PlatformType.OSX)
-            {
-                if (!File.Exists("~/Applications/Steam.app"))
-                    throw new Exception("Steam installation not found at \"~/Applications/Steam.app\". You may need to manually specify the path to Steam.");
-                return "~/Applications/Steam.app";
-            }
-            else
-            {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam"))
-                {
-                    if (key.GetValue("SteamPath") == null)
-                        throw new Exception("Steam installation not found in Windows registry. Is Steam installed correctly? You can optionally specify the path to Steam with \"-sp\"");
-                    else
-                        return key.GetValue("SteamPath").ToString();
-                }
-            }
-        }
-
         public void Run()
         {
-            // Verify all paths
-            if (string.IsNullOrEmpty(SteamDirectory))
-                SteamDirectory = FindSteamDirectory();
-            _gameDirectory = FindACEODirectory(SteamDirectory);
-            _assemblyDirectory = Path.Combine(_gameDirectory, "Airport CEO_Data", "Managed");
+            _logger.Debug($"Steam Directory is {ConfigManager.SteamDirectory}");
+            _logger.Debug($"ACEO Directory is {_gameDirectory}");
+            _logger.Debug($"Assembly-CSharp Path is {Path.Combine(_assemblyDirectory, ConfigManager.AssemblyName)}");
 
-            Logger.Log("Steam Directory is " + SteamDirectory, Logger.LogType.Debug);
-            Logger.Log("ACEO Directory is " + _gameDirectory, Logger.LogType.Debug);
-            Logger.Log("Assembly-CSharp Path is " + Path.Combine(_assemblyDirectory, AssemblyName), Logger.LogType.Debug);
-
-            // Check if the "mods" folder exists
-            if (!Directory.Exists(Path.Combine(_gameDirectory, "mods")))
-            {
-                Logger.Log("Mods folder does not exist. Creating...");
-                try
-                {
-                    Directory.CreateDirectory(Path.Combine(_gameDirectory, "mods"));
-                }
-                catch (Exception e)
-                {
-                    Logger.Log("Creating mods directory failed: " + e.Message, Logger.LogType.Warning);
-                }
-            }
-
-            if (IsPatching)
+            if (ConfigManager.IsPatching)
             {
                 BackupAssembly();
                 // Add library resolution (ACEO now relies on other DLL's like DOTween)
@@ -116,11 +52,11 @@ namespace ModLoader
                 libResolver.AddSearchDirectory(_assemblyDirectory);
                 // Create Module
                 module = AssemblyDefinition
-                    .ReadAssembly(Path.Combine(_assemblyDirectory, BackupFilename), new ReaderParameters { AssemblyResolver = libResolver})
+                    .ReadAssembly(Path.Combine(_assemblyDirectory, ConfigManager.BackupFilename), new ReaderParameters { AssemblyResolver = libResolver})
                     .MainModule;
                 Patch();
 
-                if (IsInjectingEnums)
+                if (ConfigManager.IsInjectingEnums)
                 {
                     InjectEnums();
                 }
@@ -128,27 +64,31 @@ namespace ModLoader
                 // Write out to file
                 try
                 {
-                    module.Write(Path.Combine(_assemblyDirectory, AssemblyName));
+                    module.Write(Path.Combine(_assemblyDirectory, ConfigManager.AssemblyName));
                     // Calling this manually to free the file lock
                     module.Dispose();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Logger.Log("Unable to write patched assembly! Are you sure it's not open somewhere else?", Logger.LogType.Error);
+                    _logger.Error("Unable to write patched assembly! Are you sure it's not open somewhere else?");
+                    _logger.Error($"Additional information: {ex.Message}");
                     throw;
                 }
             }
-            if (IsLaunchingGame)
+            if (ConfigManager.IsLaunchingGame)
             {
                 CheckForMLL();
-                Logger.Log("Launching ACEO...");
-                Logger.Log($"Launching ACEO through Steam with {Path.Combine(SteamDirectory, "Steam" + ExecExtenstion)} -applaunch 673610", Logger.LogType.Debug);
+                _logger.Info("Launching ACEO...");
+                _logger.Debug($"Launching ACEO through Steam with {Path.Combine(ConfigManager.SteamDirectory, $"Steam{_execExtension}")} -applaunch 673610");
                 // Start ACEO through Steam
-                var startGame = new Process();
-                startGame.StartInfo =
-                    new ProcessStartInfo(Path.Combine(SteamDirectory, "Steam" + ExecExtenstion));
-                startGame.StartInfo.WorkingDirectory = _gameDirectory;
-                startGame.StartInfo.Arguments = "-applaunch 673610";
+                var startGame = new Process
+                {
+                    StartInfo = new ProcessStartInfo(Path.Combine(ConfigManager.SteamDirectory, $"Steam{_execExtension}"))
+                    {
+                        WorkingDirectory = _gameDirectory,
+                        Arguments = "-applaunch 673610"
+                    }
+                };
                 startGame.Start();
 
                 // Steam should be starting up the game now
@@ -159,35 +99,38 @@ namespace ModLoader
                 var processes = Process.GetProcessesByName("Airport CEO");
                 if (processes.Length > 0)
                 {
-                    Logger.Log("Found Airport CEO process. Waiting until exit.");
-                    Logger.Log("Do NOT close this window! It will close automatically.");
+                    _logger.Info("Found Airport CEO process. Waiting until exit.");
+                    _logger.Info("Do NOT close this window! It will close automatically.");
                     // We assume the first process that matches Airport CEO is, in fact, the game
                     // Wait until the game exits
                     SpinWait.SpinUntil(() => processes[0].HasExited);
                 }
 
-                if (IsPatching)
+                if (ConfigManager.IsPatching)
+                {
                     RevertAssembly();
+                }
             }
         }
 
         private void BackupAssembly()
         {
-            Logger.Log("Backing up ACEO Assembly to " + BackupFilename, Logger.LogType.Debug);
+            _logger.Debug($"Backing up ACEO Assembly to {ConfigManager.BackupFilename}");
             // If the backup filename already exists, we don't want to overwrite it.
-            if (File.Exists(Path.Combine(_assemblyDirectory, BackupFilename)))
-                Logger.Log("Backup file already exists! Reverting backup to main first.", Logger.LogType.Warning);
-
+            if (File.Exists(Path.Combine(_assemblyDirectory, ConfigManager.BackupFilename)))
+            {
+                _logger.Info("Backup assembly already exists! Reverting backup to main first.");
+            }
             try
             {
-                File.Copy(Path.Combine(_assemblyDirectory, AssemblyName), Path.Combine(_assemblyDirectory, BackupFilename), true);
+                File.Copy(Path.Combine(_assemblyDirectory, ConfigManager.AssemblyName), Path.Combine(_assemblyDirectory, ConfigManager.BackupFilename), true);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log("Backing up Assembly Failed: " + e.Message, Logger.LogType.Error);
+                _logger.Error($"Backing up Assembly Failed, Not Safe to Continue: {ex.Message}");
                 throw;
             }
-            Logger.Log("Done.", Logger.LogType.Debug);
+            _logger.Debug("Done backing up.");
         }
 
         private void CheckForMLL()
@@ -195,25 +138,24 @@ namespace ModLoader
             try
             {
                 if (Directory.Exists(Path.Combine(_gameDirectory, "ModLoader")))
-                    Directory.Delete(Path.Combine(_gameDirectory, "ModLoader"), true);
-                SpinWait.SpinUntil(() => !Directory.Exists(Path.Combine(_gameDirectory, "ModLoader")));
-                Logger.Log("Writing MLL...");
-                if (!File.Exists("MLL" + LibExtension) || !File.Exists("0Harmony" + LibExtension))
-                    throw new Exception(
-                        "MLL and dependencies could not be found. ModLoader installation is missing files. Cannot continue.");
-                try
                 {
-                    Directory.CreateDirectory(Path.Combine(_gameDirectory, "ModLoader"));
+                    _logger.Debug("Clearing ModLoader directory...");
+                    Directory.Delete(Path.Combine(_gameDirectory, "ModLoader"), true);
                 }
-                catch (Exception) { }
+                SpinWait.SpinUntil(() => !Directory.Exists(Path.Combine(_gameDirectory, "ModLoader")));
+                _logger.Info("Writing MLL...");
+                if (!File.Exists($"MLL{_libExtension}") || !File.Exists($"0Harmony{_libExtension}"))
+                {
+                    throw new Exception("MLL and dependencies could not be found. ModLoader installation is missing files. Cannot continue.");
+                }
+                Directory.CreateDirectory(Path.Combine(_gameDirectory, "ModLoader"));
                 SpinWait.SpinUntil(() => Directory.Exists(Path.Combine(_gameDirectory, "ModLoader")));
-                File.Copy("MLL" + LibExtension, Path.Combine(_gameDirectory, "ModLoader", "MLL" + LibExtension));
-                File.Copy("0Harmony" + LibExtension,
-                    Path.Combine(_gameDirectory, "ModLoader", "0Harmony" + LibExtension));
+                File.Copy($"MLL{_libExtension}", Path.Combine(_gameDirectory, "ModLoader", $"MLL{_libExtension}"));
+                File.Copy($"0Harmony{_libExtension}", Path.Combine(_gameDirectory, "ModLoader", $"0Harmony{_libExtension}"));
             }
             catch (Exception ex)
             {
-                Logger.Log($"Error when adding MLL to ACEO Directory, {ex.Message}", Logger.LogType.Error);
+                _logger.Error($"Error when adding MLL to ACEO Directory: {ex.Message}");
                 throw;
             }
         }
@@ -222,7 +164,7 @@ namespace ModLoader
         {
             try
             {
-                Logger.Log("Patching Assembly-CSharp" + LibExtension, Logger.LogType.Debug);
+                _logger.Debug($"Patching Assembly-CSharp{_libExtension}");
                 
                 // This is the ExitPoint class we're patching
                 var exitPointIL = module.Types.Single(x => x.Name == "Utils").Methods.Single(x => x.Name == "QuitGame").Body;
@@ -232,7 +174,7 @@ namespace ModLoader
                 exitPointIL.Instructions.Clear();
                 
                 // Load the ModLoaderLibrary assembly
-                exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Ldstr, "ModLoader/MLL" + LibExtension));
+                exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Ldstr, $"ModLoader/MLL{_libExtension}"));
                 exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Call, module.ImportReference(typeof(Assembly).GetMethod("LoadFile", new[] { typeof(string) }))));
                 // Get the ModLoader class in the assembly
                 exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Ldstr, "ModLoaderLibrary.ModLoader"));
@@ -246,21 +188,23 @@ namespace ModLoader
                 exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Callvirt, module.ImportReference(typeof(MethodBase).GetMethod("Invoke", new[] { typeof(object), typeof(object[]) }))));
                 exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Pop));
 
+                var reference = typeof(UnityEngine.Application).GetMethod("Quit", BindingFlags.Static | BindingFlags.Public | BindingFlags.OptionalParamBinding, null, new Type[] { }, null);
+
                 // Add the 'Application.Quit()' back in
-                exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Call, module.ImportReference(typeof(UnityEngine.Application).GetMethod("Quit"))));
+                exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Call, module.ImportReference(reference)));
                 // Add the 'ret' back in
                 exitPointIL.Instructions.Add(exitPointProcessor.Create(OpCodes.Ret));
                 // Ok we're done with the exitpoint.
 
                 // This is the entry point method we're patching
-                var entryPointIL = module.Types.Single(x => x.Name == "GameVersionLabelUI").Methods.Single(x => x.Name == "Awake").Body;
+                var entryPointIL = module.Types.Single(x => x.Name == "ApplicationVersionLabelUI").Methods.Single(x => x.Name == "Awake").Body;
                 var entryPointProcessor = entryPointIL.GetILProcessor();
 
                 // Remove the 'ret' at the end of the instruction list in the method
                 entryPointIL.Instructions.RemoveAt(entryPointIL.Instructions.Count - 1);
 
                 // Add ModLoader Message (since we're at the end of GameVersionLabelUI)
-                var gameVerReference = module.Types.Single(x => x.Name == "GameVersionLabelUI");
+                var gameVerReference = module.Types.Single(x => x.Name == "ApplicationVersionLabelUI");
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldarg_0));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldfld, module.ImportReference(gameVerReference.Fields.Single(x => x.Name == "versionLabelText"))));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Dup));
@@ -270,12 +214,12 @@ namespace ModLoader
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Callvirt, module.ImportReference(typeof(UnityEngine.UI.Text).GetMethod("set_text", new [] { typeof(string) }))));
 
                 // Load Harmony
-                entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldstr, "ModLoader/0Harmony" + LibExtension));
+                entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldstr, $"ModLoader/0Harmony{_libExtension}"));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Call, module.ImportReference(typeof(Assembly).GetMethod("LoadFile", new[] { typeof(string) }))));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Pop));
 
                 // Load the ModLoaderLibrary assembly
-                entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldstr, "ModLoader/MLL" + LibExtension));
+                entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldstr, $"ModLoader/MLL{_libExtension}"));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Call, module.ImportReference(typeof(Assembly).GetMethod("LoadFile", new[] { typeof(string) }))));
 
                 // Get the ModLoader class in the assembly
@@ -290,10 +234,14 @@ namespace ModLoader
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Newarr, module.ImportReference(typeof(Object))));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Dup));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldc_I4_0));
-                if (Logger.logDebug)
+                if (_logger.IsDebugEnabled)
+                {
                     entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldc_I4_1));
+                }
                 else
+                {
                     entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ldc_I4_0));
+                }
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Box, module.ImportReference(typeof(Boolean))));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Stelem_Ref));
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Callvirt, module.ImportReference(typeof(MethodBase).GetMethod("Invoke", new[] { typeof(object), typeof(object[]) }))));
@@ -302,13 +250,11 @@ namespace ModLoader
                 // Add the 'ret' back in
                 entryPointIL.Instructions.Add(entryPointProcessor.Create(OpCodes.Ret));
 
-                Logger.Log("Done.", Logger.LogType.Debug);
+                _logger.Debug("Done.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Logger.Log("Problem when patching assembly: " + ex.Message + ", Reverting.", Logger.LogType.Error);
                 module.Dispose();
-                RevertAssembly();
                 throw;
             }
         }
@@ -322,14 +268,14 @@ namespace ModLoader
             {
                 // Get name of mod
                 string modName = Path.GetFileName(modDir);
-                Logger.Log("Checking mod \"" + modName + "\" for enums class", Logger.LogType.Debug);
+                _logger.Debug($"Checking mod \"{modName}\" for enums");
 
                 // Check mod for enums class
-                if (File.Exists(Path.Combine(modDir, modName + LibExtension)))
+                if (File.Exists(Path.Combine(modDir, $"{modName}{_libExtension}")))
                 {
-                    var modAdd = AssemblyDefinition.ReadAssembly(Path.Combine(modDir, modName + LibExtension)).MainModule;
+                    var modAdd = AssemblyDefinition.ReadAssembly(Path.Combine(modDir, $"{modName}{_libExtension}")).MainModule;
                     // Get the "EnumAdditions" class
-                    var enumadditions = modAdd?.GetType(modName + ".EnumAdditions");
+                    var enumadditions = modAdd?.GetType($"{modName}.EnumAdditions");
                     if (enumadditions == null || !enumadditions.IsClass)
                         continue;
 
@@ -337,7 +283,7 @@ namespace ModLoader
                     {
                         if (enumAdd.IsEnum)
                         {
-                            Logger.Log($"Adding mod enum \"{enumAdd.Name}\" values to ACEO enum.", Logger.LogType.Debug);
+                            _logger.Debug($"Adding mod enum \"{enumAdd.Name}\" values to ACEO enum.");
                             try
                             {
                                 var enumToOverride = module.Types.Single(x => x.Name == "Enums").NestedTypes
@@ -355,11 +301,12 @@ namespace ModLoader
                                         enumToOverride.Fields.Add(clonedEnumValue);
                                     }
                                 }
-                                Logger.Log("Done.", Logger.LogType.Debug);
+                                _logger.Debug("Done.");
                             }
                             catch (Exception ex)
                             {
-                                Logger.Log($"Exception when adding enum {enumAdd.Name}: {ex.Message}", Logger.LogType.Warning);
+                                _logger.Warn($"Exception when adding enum {enumAdd.Name}: {ex.Message}");
+                                _logger.Warn($"This mod ({modName}) may not work correctly, or even crash ACEO!");
                             }
                         }
                     }
@@ -369,17 +316,17 @@ namespace ModLoader
 
         public void RevertAssembly()
         {
-            Logger.Log("Replacing patched assembly with original...", Logger.LogType.Debug);
+            _logger.Debug("Replacing patched assembly with original...");
             try
             {
-                File.Delete(Path.Combine(_assemblyDirectory, AssemblyName));
-                File.Move(Path.Combine(_assemblyDirectory, BackupFilename), Path.Combine(_assemblyDirectory, AssemblyName));
+                File.Delete(Path.Combine(_assemblyDirectory, ConfigManager.AssemblyName));
+                File.Move(Path.Combine(_assemblyDirectory, ConfigManager.BackupFilename), Path.Combine(_assemblyDirectory, ConfigManager.AssemblyName));
             }
             catch (Exception e)
             {
-                Logger.Log("Reverting Assembly Failed: " + e.Message, Logger.LogType.Error);
+                _logger.Error($"Reverting Assembly Failed: {e.Message}");
             }
-            Logger.Log("Done.", Logger.LogType.Debug);
+            _logger.Debug("Done.");
         }
     }
 }

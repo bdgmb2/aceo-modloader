@@ -3,9 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7BFC7D40-2794-4967-BE87-45CCB3AC4BF8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AC7537D7-7C6B-4C12-8BEC-2DFA04755324}"
 	ProjectSection(SolutionItems) = preProject
+		Harmony\.editorconfig = Harmony\.editorconfig
 		.gitignore = .gitignore
+		Harmony\.travis.yml = Harmony\.travis.yml
+		Harmony\appveyor.yml = Harmony\appveyor.yml
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -21,7 +24,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ACEOLibs", "ACEOLibs", "{03
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModLoader", "ModLoader\ModLoader.csproj", "{5FB77D60-45F8-4E47-99FA-BF30E6E2632F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusNamesMod", "Samples\BusNamesMod\BusNamesMod.csproj", "{6EA2F9D0-F6DD-41A2-8B02-40313A41A233}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamesAndPlatesMod", "Samples\BusNamesMod\NamesAndPlatesMod.csproj", "{6EA2F9D0-F6DD-41A2-8B02-40313A41A233}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Harmony", "Harmony", "{F73AB48C-62E9-4D97-8D14-01CBFE66C5A2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AC7537D7-7C6B-4C12-8BEC-2DFA04755324}"
+	ProjectSection(SolutionItems) = preProject
+		Harmony\.editorconfig = Harmony\.editorconfig
+		.gitignore = .gitignore
+		Harmony\.travis.yml = Harmony\.travis.yml
+		Harmony\appveyor.yml = Harmony\appveyor.yml
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Harmony", "Harmony\Harmony\Harmony.csproj", "{69AEE16A-B6E7-4642-8081-3928B32455DF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyTests", "Harmony\HarmonyTests\HarmonyTests.csproj", "{DEE74EFC-29A8-4704-8536-7DA38D3999F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,15 +60,25 @@ Global
 		{6EA2F9D0-F6DD-41A2-8B02-40313A41A233}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EA2F9D0-F6DD-41A2-8B02-40313A41A233}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EA2F9D0-F6DD-41A2-8B02-40313A41A233}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69AEE16A-B6E7-4642-8081-3928B32455DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69AEE16A-B6E7-4642-8081-3928B32455DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69AEE16A-B6E7-4642-8081-3928B32455DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69AEE16A-B6E7-4642-8081-3928B32455DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEE74EFC-29A8-4704-8536-7DA38D3999F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEE74EFC-29A8-4704-8536-7DA38D3999F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEE74EFC-29A8-4704-8536-7DA38D3999F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEE74EFC-29A8-4704-8536-7DA38D3999F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{03DA93AB-3351-4469-878D-B76E616D4D32} = {7BFC7D40-2794-4967-BE87-45CCB3AC4BF8}
+		{887FC7DA-9A29-4130-92E7-66E21E76CAC4} = {F73AB48C-62E9-4D97-8D14-01CBFE66C5A2}
 		{6EA2F9D0-F6DD-41A2-8B02-40313A41A233} = {566F0945-8773-40F8-BC22-22C675C552EF}
+		{69AEE16A-B6E7-4642-8081-3928B32455DF} = {F73AB48C-62E9-4D97-8D14-01CBFE66C5A2}
+		{DEE74EFC-29A8-4704-8536-7DA38D3999F7} = {F73AB48C-62E9-4D97-8D14-01CBFE66C5A2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {732A37C5-8E35-46C3-A986-B508267BCD9C}
+		SolutionGuid = {61622750-C658-496F-B2E2-75D94AF6CF8B}
 	EndGlobalSection
 EndGlobal

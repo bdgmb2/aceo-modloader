@@ -1,10 +1,10 @@
 {
 	"id": "82a0f986-2fd0-44e6-b181-ca6c1c22e9d8",
 	"publishedFileId": 0,
-	"name": "Realistic Bus Names",
-	"description": "This Mod changes the bus models and the companies operating them to be more realistic.",
+	"name": "Realistic Bus Names and License Plates",
+	"description": "This Mod changes the bus models and the companies operating them to be more realistic. It also changes the license plates to be in standard Americanized format, either AAA-111 or a 7-alphanumeric value.",
 	"author": "Ben Giles (http://bengiles.me)",
-	"version": "0.1",
+	"version": "1.0",
 	"iconFileName": "",
 	"modType": "",
 	"tags":[]

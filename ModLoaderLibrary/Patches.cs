@@ -6,7 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Harmony;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,7 +27,7 @@ namespace ModLoaderLibrary
         ///
         /// FOR DEVELOPERS: If you look at GameController.LaunchGame(), you'll notice that all the mod
         /// initializations happen pretty late in the game init... this isn't good for any mods that
-        /// want to alter systems that "awake" before mod load, ex. procurement. While I'd LIKE 
+        /// want to alter systems that "awake" before mod load, ex. procurement.
         /// </summary>
         [HarmonyPostfix]
         public static void Postfix()

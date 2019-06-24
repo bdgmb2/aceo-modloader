@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
-using Harmony;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using HarmonyLib;
 using UnityEngine;
 using Logger = ModLoaderLibrary.Logger;
 using Random = System.Random;
@@ -10,25 +12,63 @@ namespace BusNamesMod
     {
         public static void GameLoading()
         {
-            var harmony = HarmonyInstance.Create("com.catcherben.busnamesmod");
+            var harmony = new Harmony("com.catcherben.busnamesmod");
             harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
-            Logger.Log("Bus Names Mod is Loaded!");
+            Logger.Log("Hello from inside Bus Names Mod!");
         }
     }
 
-    [HarmonyPatch(typeof(BusUI))]
-    [HarmonyPatch("UpdatePanel")]
-    class MainMenuPatch
+    [HarmonyPatch(typeof(VehicleModel), "GenerateLicensePlateNbr")]
+    static class LicensePlatePatch
     {
-        [HarmonyPostfix]
-        public static void Postfix(BusUI __instance, BusModel ___bm, ref string ___licenseNbrText)
+        private static Random gen;
+        static LicensePlatePatch()
         {
-            ___licenseNbrText = $"LICENSE PLATE: {Traverse.Create(___bm).Field("licensePlateNbr").GetValue()}";
+            gen = new Random();
+        }
+        public static char GetRandomLetter()
+        {
+            return (char)('A' + gen.Next(0, 26));
+        }
+
+        [HarmonyPrefix]
+        public static bool Prefix(ref string ___licensePlateNbr)
+        {
+            ___licensePlateNbr = "";
+            if (Convert.ToBoolean(gen.Next(0, 2)))
+            {
+                // Regular Style
+                for (int i = 0; i < 3; i++)
+                {
+                    ___licensePlateNbr += Utils.RandomItemInCollection(Utils.alphabet);
+                }
+                ___licensePlateNbr += "-";
+                for (int i = 0; i < 3; i++)
+                {
+                    ___licensePlateNbr += Utils.RandomRangeI(0f, 9f);
+                }
+            }
+            else
+            {
+                // Truck/heavy style
+                for (int i = 0; i < 7; i++)
+                {
+                    if (Convert.ToBoolean(gen.Next(0, 2)))
+                    {
+                        ___licensePlateNbr += Utils.RandomRangeI(0f, 9f);
+                    }
+                    else
+                    {
+                        ___licensePlateNbr += Utils.RandomItemInCollection(Utils.alphabet);
+                    }
+
+                }
+            }
+            return false;
         }
     }
 
-    [HarmonyPatch(typeof(BusModel))]
-    [HarmonyPatch("Initialize")]
+    [HarmonyPatch(typeof(BusModel), "Initialize")]
     class BusModelPatch
     {
         private static readonly List<string> availTypesNew = new List<string>
@@ -51,18 +91,11 @@ namespace BusNamesMod
 
         private static readonly Random Gen = new Random();
 
-        private static char GetRandomLetter()
-        {
-            return (char)('A' + Gen.Next(0, 26));
-        }
-
         [HarmonyPostfix]
         public static void Postfix(BusModel __instance)
         {
-            Random gen = new Random();
             __instance.company = availCompaniesNew[Utils.RandomRangeI(0f, availCompaniesNew.Count - 1)];
             __instance.vehicleModelName = availTypesNew[Utils.RandomRangeI(0f, availTypesNew.Count - 1)];
-            __instance.licensePlateNbr = GetRandomLetter().ToString() + GetRandomLetter() + GetRandomLetter() + gen.Next(0, 9) + gen.Next(0, 9) + gen.Next(0, 9);
         }
     }
 }

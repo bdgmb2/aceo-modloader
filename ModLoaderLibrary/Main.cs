@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using Harmony;
+using HarmonyLib;
 
 namespace ModLoaderLibrary
 {
@@ -18,7 +18,8 @@ namespace ModLoaderLibrary
             Logger.Log("Beginning Patches...", Logger.LogType.Debug);
             try
             {
-                var harmony = HarmonyInstance.Create("com.catcherben.modloader");
+                // Yup, this is still necessary
+                var harmony = new Harmony("com.catcherben.modloader");
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
                 Logger.Log("Finished MLL Patching.", Logger.LogType.Debug);
             }

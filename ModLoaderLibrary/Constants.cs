@@ -6,11 +6,11 @@ using System.Reflection;
 public static class MLVersion
 {
     public static readonly string Major = "0";
-    public static readonly string Minor = "1";
+    public static readonly string Minor = "2";
     public static readonly string Revision = "0";
     public new static string ToString()
     {
-        return Major + "." + Minor + "." + Revision;
+        return $"{Major}.{Minor}.{Revision}";
     }
 }
 
