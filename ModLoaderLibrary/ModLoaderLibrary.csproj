@@ -44,9 +44,6 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\ACEOLibs\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\ACEOLibs\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Net" />
     <Reference Include="UnityEngine">
@@ -64,9 +61,6 @@
       <HintPath>..\ACEOLibs\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Harmony\Harmony\Harmony.csproj">
