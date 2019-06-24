@@ -16,7 +16,7 @@ variables:
   repositoryName: 'bdgmb2/aceo-modloader'
 
 steps:
-- powershell: 'git submodule init && git submodule update'
+- bash: 'git submodule init && git submodule update'
   displayName: 'Clone Submodules'
 - task: NuGetToolInstaller@0
 - task: NuGetCommand@2
