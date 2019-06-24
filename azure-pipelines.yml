@@ -30,7 +30,7 @@ steps:
 - task: DownloadSecureFile@1
   displayName: Pull in Airport CEO Code
   inputs:
-    secureFile: ACEOLibs.zip
+    secureFile: 'ACEOLibs.zip'
 - bash: 'unzip -q ACEOLibs.zip -d ModLoader/ACEOLibs'
   displayName: Unzip Airport CEO Code
 - task: VSBuild@1
