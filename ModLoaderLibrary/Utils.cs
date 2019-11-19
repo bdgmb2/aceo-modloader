@@ -14,6 +14,11 @@ namespace ModLoaderLibrary
 
         public static void Initialize(bool verbosity)
         {
+            if (_file != null)
+            {
+                return;
+            }
+            
             _file = new StreamWriter("ModLoader/MLLoutput.log");
             _ready = true;
             _isDebug = verbosity;

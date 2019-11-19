@@ -38,7 +38,7 @@ namespace ModLoader
             IsPatching = ConfigurationManager.AppSettings["patch"] == "false" ? false : true;
             IsLaunchingGame = ConfigurationManager.AppSettings["launch_game"] == "false" ? false : true;
             SteamDirectory = ConfigurationManager.AppSettings["steam_directory"] ?? FindSteamDirectory();
-            AssemblyName = ConfigurationManager.AppSettings["assembly_name"] ?? $"Assembly-CSharp.{(CurrentPlatform == OSType.Windows ? "dll" : "dylib")}";
+            AssemblyName = ConfigurationManager.AppSettings["assembly_name"] ?? "Assembly-CSharp.dll";
             BackupFilename = ConfigurationManager.AppSettings["backup_filename"] ?? $"{AssemblyName}.BACKUP";
         }
 
@@ -47,14 +47,16 @@ namespace ModLoader
             var _logger = NLog.LogManager.GetCurrentClassLogger();
             if (CurrentPlatform == OSType.OSX)
             {
-                if (!File.Exists("~/Applications/Steam.app"))
+                var path = OSXUtils.FindPath("Steam");
+                
+                if (path == null)
                 {
-                    _logger.Fatal("Steam installation not found at \"~/Applications/Steam.app\". You may need to manually specify the path to Steam.");
+                    _logger.Fatal("Steam installation not found. You may need to manually specify the path to Steam.");
                     _logger.Fatal("ModLoader cannot continue. Press any key to exit.");
                     Console.ReadKey();
                     Environment.Exit(3);
                 }
-                return "~/Applications/Steam.app";
+                return path;
             }
             else
             {

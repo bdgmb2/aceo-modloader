@@ -34,8 +34,8 @@ namespace ModLoaderLibrary
         {
             Logger.Log("Launching Game State...", Logger.LogType.Debug);
 
-            var method = typeof(ModManager).GetMethod("GetModPath", BindingFlags.NonPublic | BindingFlags.Static);
-            GlobalVars.modPath = method?.Invoke(null, null) as string;
+            GlobalVars.modPath = ModManager.GetModPath();
+            
             Logger.Log($"modPath: {GlobalVars.modPath}", Logger.LogType.Debug);
             string[] directories = Directory.GetDirectories(GlobalVars.modPath);
             foreach (string dir in directories)
@@ -45,7 +45,7 @@ namespace ModLoaderLibrary
                 if (ModManager.IsModActivated(data.id))
                 {
                     // We're going to load all ".dll" and ".dylib" mods in the folder
-                    string lib = UnityEngine.SystemInfo.operatingSystem.Contains("Windows") ? ".dll" : ".dylib";
+                    string lib = ".dll";
                     string modName = new DirectoryInfo(dir).Name;
                     if (File.Exists(Path.Combine(dir, modName + lib)))
                     {
@@ -72,7 +72,13 @@ namespace ModLoaderLibrary
                         }
                     }
                     else
-                        Logger.Log($"Mod {dir} not activated, skipping...", Logger.LogType.Debug);
+                    {
+                        Logger.Log($"Mod {dir} have no dll, skipping...", Logger.LogType.Debug);
+                    }
+                }
+                else
+                {
+                    Logger.Log($"Mod {dir} not activated, skipping...", Logger.LogType.Debug);
                 }
             }
         }
