@@ -79,6 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Launcher\Launcher.cs" />
+    <Compile Include="Launcher\OSXLauncher.cs" />
+    <Compile Include="Launcher\WindowsLauncher.cs" />
+    <Compile Include="OSXUtils.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

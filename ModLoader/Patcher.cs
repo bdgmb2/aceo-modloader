@@ -19,6 +19,7 @@ namespace ModLoader
         private readonly string _execExtension;
         private readonly string _libExtension;
         private ModuleDefinition module;
+        private Launcher _launcher;
 
         private readonly NLog.Logger _logger;
 
@@ -26,16 +27,28 @@ namespace ModLoader
         {
             _logger = NLog.LogManager.GetCurrentClassLogger();
             _execExtension = ConfigManager.CurrentPlatform == OSType.Windows ? ".exe" : ".app";
-            _libExtension = ConfigManager.CurrentPlatform == OSType.Windows ? ".dll" : ".dylib";
+            _libExtension = ".dll";
             _gameDirectory = FindACEODirectory(ConfigManager.SteamDirectory);
-            _assemblyDirectory = Path.Combine(_gameDirectory, "Airport CEO_Data", "Managed");
+            _assemblyDirectory = ConfigManager.CurrentPlatform == OSType.Windows
+                ? Path.Combine(_gameDirectory, "Airport CEO_Data", "Managed")
+                : Path.Combine(_gameDirectory, "Airport CEO.app/Contents/Resources/Data/Managed");
+
+            
+            if (ConfigManager.CurrentPlatform == OSType.Windows)
+            {
+                _launcher = new WindowsLauncher(_logger, Path.Combine(ConfigManager.SteamDirectory, "Steam.exe"), _gameDirectory);                
+            }
+            else
+            {
+                _launcher = new OSXLauncher(_logger, ConfigManager.SteamDirectory, _gameDirectory);
+            }
         }
 
         private static string FindACEODirectory(string steamDirectory)
         {
             return ConfigManager.CurrentPlatform == OSType.Windows ? 
                 Path.Combine(steamDirectory, "steamapps", "common", "Airport CEO") :
-                "~/Library/Application Support/Steam/steamapps/common/Airport CEO";
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library/Application Support/Steam/steamapps/common/Airport CEO");
         }
 
         public void Run()
@@ -78,33 +91,8 @@ namespace ModLoader
             if (ConfigManager.IsLaunchingGame)
             {
                 CheckForMLL();
-                _logger.Info("Launching ACEO...");
-                _logger.Debug($"Launching ACEO through Steam with {Path.Combine(ConfigManager.SteamDirectory, $"Steam{_execExtension}")} -applaunch 673610");
-                // Start ACEO through Steam
-                var startGame = new Process
-                {
-                    StartInfo = new ProcessStartInfo(Path.Combine(ConfigManager.SteamDirectory, $"Steam{_execExtension}"))
-                    {
-                        WorkingDirectory = _gameDirectory,
-                        Arguments = "-applaunch 673610"
-                    }
-                };
-                startGame.Start();
-
-                // Steam should be starting up the game now
-                startGame.WaitForExit();
-
-                // Wait a second and a half just to be safe
-                Thread.Sleep(1500);
-                var processes = Process.GetProcessesByName("Airport CEO");
-                if (processes.Length > 0)
-                {
-                    _logger.Info("Found Airport CEO process. Waiting until exit.");
-                    _logger.Info("Do NOT close this window! It will close automatically.");
-                    // We assume the first process that matches Airport CEO is, in fact, the game
-                    // Wait until the game exits
-                    SpinWait.SpinUntil(() => processes[0].HasExited);
-                }
+                _launcher.Launch();
+                _launcher.WaitForGameExit();
 
                 if (ConfigManager.IsPatching)
                 {
@@ -261,8 +249,10 @@ namespace ModLoader
 
         private void InjectEnums()
         {
-            string modPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Apoapsis Studios", "Airport CEO", "Mods");
+            string modPath = (ConfigManager.CurrentPlatform == OSType.Windows)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Apoapsis Studios", "Airport CEO", "Mods")
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", "unity.Apoapsis Studios.Airport CEO", "Mods");
+            
             var dirs = Directory.EnumerateDirectories(modPath);
             foreach (var modDir in dirs)
             {
